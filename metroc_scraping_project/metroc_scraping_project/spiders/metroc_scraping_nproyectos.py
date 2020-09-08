@@ -5,6 +5,11 @@ from json import loads
 
 from time import sleep
 
+import os, logging
+
+from datetime import date
+
+
 N_categoria = 2 # Como son varias categorias construidas bajo la misma clase, se optó por acceder a cada una de ellas de manera separada para hacer más simple el codigo (hasta el dia 28/08/2020 son 4 categorias)
 
 API_key = 'P1MfFHfQMOtL16Zpg36NcntJYCLFm8FqFfudnavl' # Toca estar pendiente si es dinamica cada cierto tiempo, por eso se deja apartarda para facilitar su manejo.
@@ -13,36 +18,53 @@ API_key = 'P1MfFHfQMOtL16Zpg36NcntJYCLFm8FqFfudnavl' # Toca estar pendiente si e
 data_links = []
 cat_links = []
 
+
 class MetrocScrapingNproyectosSpider(Spider):
 	name = 'metroc_scraping_nproyectos'
 	allowed_domains = ['metrocuadrado.com']
 	start_urls = ['https://www.metrocuadrado.com/']
 
+	def print_(self, message = ' ', type_ = 'info'):
+
+		message = str(message)
+		if type_ == 'deb': # deb es igual a debug
+			logging.debug(message)
+			print(message)
+		elif type_ == 'info': # info es igual a informacion
+			logging.info(message)
+			print(message)
+		elif type_ == 'war': # war es igual a warning
+			logging.warning(message)
+			print(message)
+		else:
+			print('Mire que es corto lo que hay que escribir pa que se equivoque!!')
+
+
 	def parse(self, response):
-		# print()
-		# print('Entra aca 1')
-		# print()
+
+		try:
+			LOG_FILENAME = '.\\logs\\projects_log_' + str(date.today()) + '.log'
+
+			for handler in logging.root.handlers[:]:
+			    logging.root.removeHandler(handler)
+			
+			logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG, format= '%(asctime)s : %(levelname)s : %(message)s')    
+			logging.info('Forecastiong Job Started...')
+		
+		except FileNotFoundError:
+			os.mkdir(os.getcwd() + '\\logs')	
+			LOG_FILENAME = '.\\logs\\projects_log_' + str(date.today()) + '.log'
+
+			for handler in logging.root.handlers[:]:
+			    logging.root.removeHandler(handler)
+			
+			logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG, format= '%(asctime)s : %(levelname)s : %(message)s')    
+			logging.info('Forecastiong Job Started...')
+
+
 		
 		projects_links = response.xpath('//*[@class= "box-list"]')[N_categoria].xpath('.//li//a/@href').extract()
 		projects_links = [link.replace('http', 'https') for link in projects_links]
-
-		# data_links = []
-
-		# for url in projects_links:
-		# 	items = {}
-		# 	url = url.split('.com')[-1].split('/')
-
-		# 	for ind, info in enumerate(url):
-		# 		if info == '':
-		# 			url.pop(ind)
-
-		# 	items['inmu_'] = url[0]
-		# 	items['type_'] = url[1]
-		# 	items['loc_'] = url[-1]
-
-		# 	data_links.append(items)
-
-		# n_cat = 0 ################################################################################# ojo !!
 
 
 		for link in projects_links[1:]:
@@ -86,25 +108,11 @@ class MetrocScrapingNproyectosSpider(Spider):
 		data_links.append(data_link)
 		cat_links.append('https://www.metrocuadrado.com'+cat_link)
 
-		if len(data_links) == len(projects_links)-1:		
-	# 	n_cat = response.meta['n_cat']
+		if len(data_links) == len(projects_links)-1:	
 			print('Entra el If de que ya se tienen todas las categorias ---------------------->')
 			sleep(20)
 			n_from = 0     
 			n_cat = 0 			
-
-	# 	cat_link = projects_links[n_cat]
-	# 	data_link = data_links[n_cat]
-
-	# 	print(data_link)
-
-	# 	inmu_ = data_link['inmu_']
-	# 	type_ = data_link['type_']
-	# 	loc_ = data_link['loc_']
-
-			  
-
-	# 	n = 0
 
 			yield Request(url= 'https://www.metrocuadrado.com/',
 						  callback= self.second_parse,
@@ -162,12 +170,9 @@ class MetrocScrapingNproyectosSpider(Spider):
 		n_from = response.meta['n_from']
 		data_link = response.meta['data_link']
 		cat_link = response.meta['cat_link']
+		#projects_links = response.meta['projects_links']
 		
 		n = response.meta['n']
-
-	# 	inmu_ = data_link['inmu_'].replace('s', '')
-	# 	type_ = data_link['type_']
-	# 	loc_ = data_link['loc_']
 
 		api_link = 'https://www.metrocuadrado.com/rest-search/search?realEstateBusinessList='+data_link['neg_']+'&realEstateStatusList='+data_link['est_']+'&city='+data_link['loc_']+'&from='+str(n_from)+'&size=300'  
 		
@@ -194,7 +199,7 @@ class MetrocScrapingNproyectosSpider(Spider):
 							 'cat_link': cat_link,
 							 'n': n},
 							 
-					  url= api_link+str(n_from)+'&size=300',
+					  url= api_link, #+str(n_from)+'&size=300',
 					  dont_filter= True)
 
 
@@ -207,7 +212,7 @@ class MetrocScrapingNproyectosSpider(Spider):
 		n_from = response.meta['n_from']
 		data_link = response.meta['data_link']
 		cat_link = response.meta['cat_link']
-	# 	projects_links = response.meta['projects_links']
+		#projects_links = response.meta['projects_links']
 
 		n = response.meta['n']
 
@@ -226,96 +231,260 @@ class MetrocScrapingNproyectosSpider(Spider):
 		print()
 
 	# 	#sleep(5)
-		if jsonresponse['results'] != [] and n < 1:
+		if jsonresponse['results'] != []: # and n < 1:
 
 			n_from += 300
 			n += 1
 
-			casas = jsonresponse['results']
+			projects = jsonresponse['results']
 
-			for casa in casas:
+			url_projects = []
+			data_projects = []
+			n_project = 0
 
-				mun_name = casa['mciudad']['nombre']
+			for project in projects:
 
+				id_project = project['midinmueble']
 
-				constructor = casa['mnombreconstructor']
-				proyecto = casa['mnombreproyecto']
-				estado = casa['mestadoinmueble']
-
-
-				try: zona = casa['mzona']['nombre']
-				except: zona = casa['mzona']
-
-				barrio = casa['mbarrio']
-				nom_barrio_comun = casa['mnombrecomunbarrio']
+				mun_name = project['mciudad']['nombre']
 
 
-				tipo = casa['mtipoinmueble']['nombre']
-				title= casa['title']
-				tipo_negocio = casa['mtiponegocio']
-				val_venta = casa['mvalorventa']
-				val_arriendo = casa['mvalorarriendo']
+				constructor = project['mnombreconstructor']
+				proyecto = project['mnombreproyecto']
+				estado = project['mestadoinmueble']
 
 
-				area = casa['marea']
-				n_habs = casa['mnrocuartos']
-				n_banos = casa['mnrobanos']
-				n_garajes = casa['mnrogarajes']
+				try: zona = project['mzona']['nombre']
+				except: zona = project['mzona']
+
+				barrio = project['mbarrio']
+				nom_barrio_comun = project['mnombrecomunbarrio']
 
 
-				image_url = casa['imageLink']
-
-				print('#'*90)
-				print('\n','ESTAMOS CON NUEVOS PROYECTOS EN', data_link['neg_'].upper(), 'UBICADO EN', data_link['loc_'].upper(), '\n')
-				print('\nConstructora: ', constructor,
-					  '\nNombre proyecto: ', proyecto,
-					  '\nEstado: ', estado,
-					  '\n\tZona: ', zona,
-					  '\n\tBarrio: ', barrio,
-					  '\n\tBarrio comun: ', nom_barrio_comun,
-					  '\n\tTipo: ', tipo,
-					  '\n\tTitulo: ', title,
-					  '\n\tNegocio: ', tipo_negocio,
-					  '\n\t\tValor venta: ', val_venta,
-					  '\n\t\tValor arriedo: ', val_arriendo,
-					  '\n\t\t\tArea: ', area,
-					  '\n\t\t\t# Habitaciones: ', n_habs,
-					  '\n\t\t\t# Baños: ', n_banos,
-					  '\n\t\t\t# Garajes: ', n_garajes, '\n')
+				tipo = project['mtipoinmueble']['nombre']
+				title= project['title']
+				tipo_negocio = project['mtiponegocio']
+				val_venta = project['mvalorventa']
+				val_arriendo = project['mvalorarriendo']
 
 
-				yield {
-						'constructor': constructor,
-						'proyecto': proyecto,
-						'estado': estado,
-						'zona': zona,
-						'barrio': barrio,
-						'nom_barrio_comun': nom_barrio_comun,
-						'tipo': tipo,
-						'title': title,
-						'tipo_negocio': tipo_negocio,
-						'val_venta': val_venta,
-						'val_arriendo': val_arriendo,
-						'area': area,
-						'n_habs': n_habs,
-						'n_banos': n_banos,
-						'n_garajes': n_garajes
-					}
+				area = project['marea']
+				n_habs = project['mnrocuartos']
+				n_banos = project['mnrobanos']
+				n_garajes = project['mnrogarajes']
+
+
+				image_url = project['imageLink']
+
+				url = 'https://www.metrocuadrado.com' + project['link']
 
 
 
-			yield Request(url= cat_link,
-						  callback= self.partial_parse,
-						  meta= {'n_cat': n_cat,
+				data_project =  { 
+							   'id_project': id_project,
+							   'mun_name': mun_name,
+						   	   'constructor': constructor,
+						   	   'proyecto': proyecto,
+						   	   'estado': estado,
+						   	   'zona': zona,
+						   	   'barrio': barrio,
+						   	   'nom_barrio_comun': nom_barrio_comun,
+						   	   'tipo': tipo,
+						   	   'title': title,
+						   	   'tipo_negocio': tipo_negocio,
+						   	   'val_venta': val_venta,
+						   	   'val_arriendo': val_arriendo,
+						   	   'area': area,
+						   	   'n_habs': n_habs,
+						   	   'n_banos': n_banos,
+						   	   'n_garajes': n_garajes,
+						   	   'url': url
+							}
+				data_projects.append(data_project)
+
+			url_project = data_projects[n_project]['url']
+
+			yield Request(url= url_project,
+						  callback= self.details_parse,
+						  meta= {'data_links': data_links,
+								 'n_cat': n_cat,
 								 'n_from': n_from,
 								 'data_link': data_link,
 								 'cat_link': cat_link,
+								# 'projects_links':projects_links,
+								# 'cache_n_from': cache_n_from,
+								# 'trys': trys, 
+								 'data_projects': data_projects,
+								 'n_project': n_project,
 								 'n': n},
-						  dont_filter= True)
+					  	  dont_filter= True,
+					  	  headers= {'Accept': 'application/json, text/plain, */*',
+								'Accept-Encoding': 'gzip, deflate, br',
+								'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3',
+								'Connection': 'keep-alive',
+								'DNT': '1',
+								'Host': 'www.metrocuadrado.com',
+								'Upgrade-Insecure-Requests': '1',
+								'Referer': cat_link,
+								'Pragma': 'no-cache',
+								'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0',
+								'X-Api-Key': API_key,
+								'X-Requested-With': 'XMLHttpRequest'})
+
+
 
 		elif n_cat < len(data_links)- 1:
 			n_cat += 1
 			yield Request(url= 'https://www.metrocuadrado.com/',
 						  callback= self.second_parse,
 						  meta= {'n_cat': n_cat},
+						  dont_filter= True)
+
+		else: 
+			logging.shutdown()
+			self.print_('#'*20+' Por ahora terminamos '+'#'*20)
+
+
+
+
+	def details_parse(self, response):
+		data_links= response.meta['data_links']
+		n_cat= response.meta['n_cat']
+		n_from= response.meta['n_from']
+		data_link= response.meta['data_link']
+		cat_link= response.meta['cat_link']
+		#projects_links= response.meta['projects_links']
+		#cache_n_from= response.meta['cache_n_from']
+		#trys= response.meta['trys']
+		data_projects = response.meta['data_projects']
+		n_project = response.meta['n_project']
+
+		n= response.meta['n']	
+
+		self.print_()
+		self.print_(response.url)
+		self.print_()
+		#self.print_(response.text)
+		self.print_()
+
+		#self.print_(project)
+
+		id_project = data_projects[n_project]['id_project']
+		mun_name = data_projects[n_project]['mun_name']
+		constructor = data_projects[n_project]['constructor']
+		proyecto = data_projects[n_project]['proyecto']
+		estado = data_projects[n_project]['estado']
+		zona = data_projects[n_project]['zona']
+		barrio = data_projects[n_project]['barrio']
+		nom_barrio_comun = data_projects[n_project]['nom_barrio_comun']
+		tipo = data_projects[n_project]['tipo']
+		title = data_projects[n_project]['title']
+		tipo_negocio = data_projects[n_project]['tipo_negocio']
+		val_venta = data_projects[n_project]['val_venta']
+		val_arriendo = data_projects[n_project]['val_arriendo']
+		area = data_projects[n_project]['area']
+		n_habs = data_projects[n_project]['n_habs']
+		n_banos = data_projects[n_project]['n_banos']
+		n_garajes = data_projects[n_project]['n_garajes']
+		url = data_projects[n_project]['url']
+
+		estrato = response.xpath('//h2[@class= "H2-kplljn-0 fxUScU card-text"]/text()').extract_first()
+		area_const = response.xpath('//*[@class= "Col-sc-14ninbu-0 lfGZKA mb-3 pb-1 col-12 col-lg-3"]//h3[contains(text(), "Área construida")]').xpath('..//p/text()').extract_first()
+		area_priv = response.xpath('//*[@class= "Col-sc-14ninbu-0 lfGZKA mb-3 pb-1 col-12 col-lg-3"]//h3[contains(text(), "Área privada")]').xpath('..//p/text()').extract_first()
+		antiguedad = response.xpath('//*[@class= "Col-sc-14ninbu-0 lfGZKA mb-3 pb-1 col-12 col-lg-3"]//h3[contains(text(), "Antigüedad")]').xpath('..//p/text()').extract_first()
+		caracteristicas = response.xpath('//*[@class= "Li-sc-1knn373-0 ctJpwh w-90"]/p/text()').extract()
+		caracteristicas = str(caracteristicas)
+
+		self.print_('#'*90)
+		self.print('\n','ESTAMOS CON NUEVOS PROYECTOS EN', data_link['neg_'].upper(), 'UBICADO EN', data_link['loc_'].upper(), '\n')
+		self.print_(
+			f'''
+			  Constructora:  {constructor}
+			  Nombre proyecto:  {proyecto}
+			  Estado:  {estado}
+		  	  \tZona:  {zona}
+		  	  \tBarrio:  {barrio}
+		  	  \tBarrio comun:  {nom_barrio_comun}
+		  	  \tTipo:  {tipo}
+		  	  \tTitulo:  {title}
+		  	  \tNegocio:  {tipo_negocio}
+		  	  \t\tValor venta:  {val_venta}
+		  	  \t\tValor arriedo:  {val_arriendo}
+		  	  \t\t\tArea:  {area}
+		  	  \t\t\t# Habitaciones:  {n_habs}
+		  	  \t\t\t# Baños:  {n_banos}
+		  	  \t\t\t# Garajes:  {n_garajes} \n
+		  	  '''
+		  	  )
+
+
+		yield { 
+				'mun_name':mun_name,
+				'id_project':id_project,
+				'constructor':constructor,
+				'proyecto':proyecto,
+				'estado':estado,
+				'zona':zona,
+				'barrio':barrio,
+				'nom_barrio_comun':nom_barrio_comun,
+				'tipo':tipo,
+				'title':title,
+				'tipo_negocio':tipo_negocio,
+				'estrato':estrato,
+				'val_venta':val_venta,
+				'val_arriendo':val_arriendo,
+				'antiguedad':antiguedad,
+				'area':area,
+				'area_const':area_const,
+				'area_priv': area_priv,
+				'n_habs':n_habs,
+				'n_banos':n_banos,
+				'n_garajes':n_garajes,
+				'caracteristicas':caracteristicas,
+				'url':url
+			}
+
+		if n_project < len(data_projects) -1:
+			n_project += 1
+			url_project = data_projects[n_project]['url']
+
+			yield Request(url= url_project,
+						  callback= self.details_parse,
+						  meta= {'data_links': data_links,
+								 'n_cat': n_cat,
+								 'n_from': n_from,
+								 'data_link': data_link,
+								 'cat_link': cat_link,
+								# 'projects_links':projects_links,
+								# 'cache_n_from': cache_n_from,
+								# 'trys': trys, 
+								 'data_projects': data_projects,
+								 'n_project': n_project,
+								 'n': n},
+					  	  dont_filter= True,
+					  	  headers= {'Accept': 'application/json, text/plain, */*',
+								'Accept-Encoding': 'gzip, deflate, br',
+								'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3',
+								'Connection': 'keep-alive',
+								'DNT': '1',
+								'Host': 'www.metrocuadrado.com',
+								'Upgrade-Insecure-Requests': '1',
+								'Referer': cat_link,
+								'Pragma': 'no-cache',
+								'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0',
+								'X-Api-Key': API_key,
+								'X-Requested-With': 'XMLHttpRequest'})
+
+		else:
+			yield Request(url= cat_link,
+						  callback= self.partial_parse,
+						  meta= {'data_links': data_links,
+								 'n_cat': n_cat,
+								 'n_from': n_from,
+								 'data_link': data_link,
+								 'cat_link': cat_link,
+								# 'projects_links':projects_links,
+								# 'cache_n_from': cache_n_from,
+								# 'trys': trys, 
+								 'n': n},
 						  dont_filter= True)
