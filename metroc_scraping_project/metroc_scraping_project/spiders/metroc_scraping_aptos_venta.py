@@ -15,15 +15,12 @@ N_categoria = 0 # Como son varias categorias construidas bajo la misma clase, se
 API_key = 'P1MfFHfQMOtL16Zpg36NcntJYCLFm8FqFfudnavl' # Toca estar pendiente si es dinamica cada cierto tiempo, por eso se deja apartarda para facilitar su manejo.
 
 
-class MetrocScrapingSpider(Spider):
-	name = 'metroc_scraping'
+class MetrocScrapingAptosVentaSpider(Spider):
+	name = 'metroc_scraping_aptos_venta'
 	allowed_domains = ['metrocuadrado.com']
 	start_urls = ['https://www.metrocuadrado.com/']
 
 	
-
-
-
 	def print_(self, message = ' ', type_ = 'info'):
 
 		message = str(message)
@@ -43,20 +40,20 @@ class MetrocScrapingSpider(Spider):
 	def parse(self, response):
 
 		try:
-			LOG_FILENAME = '.\\logs\\aptos_arriendo_log_' + str(date.today()) + '.log'
+			LOG_FILENAME = '.\\logs\\aptos_venta_log_' + str(date.today()) + '.log'
 
 			for handler in logging.root.handlers[:]:
-			    logging.root.removeHandler(handler)
+				logging.root.removeHandler(handler)
 			
 			logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG, format= '%(asctime)s : %(levelname)s : %(message)s')    
 			logging.info('Forecastiong Job Started...')
 		
 		except FileNotFoundError:
 			os.mkdir(os.getcwd() + '\\logs')
-			LOG_FILENAME = '.\\logs\\aptos_arriendo_log_' + str(date.today()) + '.log'
+			LOG_FILENAME = '.\\logs\\aptos_venta_log_' + str(date.today()) + '.log'
 
 			for handler in logging.root.handlers[:]:
-			    logging.root.removeHandler(handler)
+				logging.root.removeHandler(handler)
 			
 			logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG, format= '%(asctime)s : %(levelname)s : %(message)s')    
 		
@@ -68,7 +65,7 @@ class MetrocScrapingSpider(Spider):
 		aptos_links = response.xpath('//*[@class= "box-list"]')[N_categoria].xpath('.//li//a/@href').extract()
 		aptos_links = [link.replace('http', 'https') for link in aptos_links]
 
-		aptos_links = [print(link) for link in aptos_links if 'venta' not in link]
+		aptos_links = [print(link) for link in aptos_links if 'arriendo' not in link]
 
 		data_links = []
 
