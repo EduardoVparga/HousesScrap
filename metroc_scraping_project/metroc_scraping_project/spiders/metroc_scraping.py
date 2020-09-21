@@ -68,12 +68,13 @@ class MetrocScrapingSpider(Spider):
 		aptos_links = response.xpath('//*[@class= "box-list"]')[N_categoria].xpath('.//li//a/@href').extract()
 		aptos_links = [link.replace('http', 'https') for link in aptos_links]
 
-		aptos_links = [print(link) for link in aptos_links if 'venta' not in link]
+		#aptos_links = [print(link) for link in aptos_links if 'venta' not in link]
 
 		data_links = []
 
 		for url in aptos_links:
 			items = {}
+			#print(url)
 			url = url.split('.com')[-1].split('/')
 
 			for ind, info in enumerate(url):
@@ -287,6 +288,7 @@ class MetrocScrapingSpider(Spider):
 
 				mun_name = apto['mciudad']['nombre']
 
+				cel_num = apto['contactPhone']
 
 				constructor = apto['mnombreconstructor']
 				proyecto = apto['mnombreproyecto']
@@ -320,6 +322,7 @@ class MetrocScrapingSpider(Spider):
 				data_apto =  { 
 							   'id_apto': id_apto,
 							   'mun_name': mun_name,
+							   'cel_num': cel_num,
 						   	   'constructor': constructor,
 						   	   'proyecto': proyecto,
 						   	   'estado': estado,
@@ -412,6 +415,7 @@ class MetrocScrapingSpider(Spider):
 
 		id_apto = data_aptos[n_apto]['id_apto']
 		mun_name = data_aptos[n_apto]['mun_name']
+		cel_num = data_aptos[n_apto]['cel_num']
 		constructor = data_aptos[n_apto]['constructor']
 		proyecto = data_aptos[n_apto]['proyecto']
 		estado = data_aptos[n_apto]['estado']
@@ -462,6 +466,7 @@ class MetrocScrapingSpider(Spider):
 		yield { 
 				'mun_name':mun_name,
 				'id_apto':id_apto,
+				'cel_num': cel_num,
 				'constructor':constructor,
 				'proyecto':proyecto,
 				'estado':estado,

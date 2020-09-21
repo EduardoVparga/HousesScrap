@@ -292,6 +292,7 @@ class MetrocScrapingOtroSpider(Spider):
 
 				mun_name = otro['mciudad']['nombre']
 
+				cel_num = apto['contactPhone']
 
 				constructor = otro['mnombreconstructor']
 				proyecto = otro['mnombreproyecto']
@@ -325,6 +326,7 @@ class MetrocScrapingOtroSpider(Spider):
 				data_otro =  { 
 							   'id_otro': id_otro,
 							   'mun_name': mun_name,
+							   'cel_num': cel_num,
 						   	   'constructor': constructor,
 						   	   'proyecto': proyecto,
 						   	   'estado': estado,
@@ -417,6 +419,7 @@ class MetrocScrapingOtroSpider(Spider):
 
 		id_otro = data_otros[n_otro]['id_otro']
 		mun_name = data_otros[n_otro]['mun_name']
+		cel_num = data_otros[n_otro]['cel_num']
 		constructor = data_otros[n_otro]['constructor']
 		proyecto = data_otros[n_otro]['proyecto']
 		estado = data_otros[n_otro]['estado']
@@ -467,6 +470,7 @@ class MetrocScrapingOtroSpider(Spider):
 		yield { 
 				'mun_name':mun_name,
 				'id_otro':id_otro,
+				'cel_num': cel_num,
 				'constructor':constructor,
 				'proyecto':proyecto,
 				'estado':estado,

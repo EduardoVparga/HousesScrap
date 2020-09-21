@@ -248,6 +248,7 @@ class MetrocScrapingNproyectosSpider(Spider):
 
 				mun_name = project['mciudad']['nombre']
 
+				cel_num = apto['contactPhone']
 
 				constructor = project['mnombreconstructor']
 				proyecto = project['mnombreproyecto']
@@ -283,6 +284,7 @@ class MetrocScrapingNproyectosSpider(Spider):
 				data_project =  { 
 							   'id_project': id_project,
 							   'mun_name': mun_name,
+							   'cel_num': cel_num,
 						   	   'constructor': constructor,
 						   	   'proyecto': proyecto,
 						   	   'estado': estado,
@@ -371,6 +373,7 @@ class MetrocScrapingNproyectosSpider(Spider):
 
 		id_project = data_projects[n_project]['id_project']
 		mun_name = data_projects[n_project]['mun_name']
+		cel_num = data_projects[n_project]['cel_num']
 		constructor = data_projects[n_project]['constructor']
 		proyecto = data_projects[n_project]['proyecto']
 		estado = data_projects[n_project]['estado']
@@ -421,6 +424,7 @@ class MetrocScrapingNproyectosSpider(Spider):
 		yield { 
 				'mun_name':mun_name,
 				'id_project':id_project,
+				'cel_num': cel_num,
 				'constructor':constructor,
 				'proyecto':proyecto,
 				'estado':estado,

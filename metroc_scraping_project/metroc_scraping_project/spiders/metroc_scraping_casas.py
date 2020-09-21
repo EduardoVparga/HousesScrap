@@ -281,6 +281,7 @@ class MetrocScrapingCasasSpider(Spider):
 
 				mun_name = casa['mciudad']['nombre']
 
+				cel_num = apto['contactPhone']
 
 				constructor = casa['mnombreconstructor']
 				proyecto = casa['mnombreproyecto']
@@ -316,6 +317,7 @@ class MetrocScrapingCasasSpider(Spider):
 				data_casa =  { 
 							   'id_casa': id_casa,
 							   'mun_name': mun_name,
+							   'cel_num': cel_num,
 						   	   'constructor': constructor,
 						   	   'proyecto': proyecto,
 						   	   'estado': estado,
@@ -407,6 +409,7 @@ class MetrocScrapingCasasSpider(Spider):
 
 		id_casa = data_casas[n_casa]['id_casa']
 		mun_name = data_casas[n_casa]['mun_name']
+		cel_num = data_casas[n_casa]['cel_num']
 		constructor = data_casas[n_casa]['constructor']
 		proyecto = data_casas[n_casa]['proyecto']
 		estado = data_casas[n_casa]['estado']
@@ -457,6 +460,7 @@ class MetrocScrapingCasasSpider(Spider):
 		yield { 
 				'mun_name':mun_name,
 				'id_casa':id_casa,
+				'cel_num': cel_num,
 				'constructor':constructor,
 				'proyecto':proyecto,
 				'estado':estado,
