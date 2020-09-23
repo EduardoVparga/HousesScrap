@@ -42,7 +42,7 @@ class MetrocScrapingOtroSpider(Spider):
 	def parse(self, response):
 
 		try:
-			LOG_FILENAME = '.\\logs\\projects_log_' + str(date.today()) + '.log'
+			LOG_FILENAME = '.\\logs\\otros_log_' + str(date.today()) + '.log'
 
 			for handler in logging.root.handlers[:]:
 				logging.root.removeHandler(handler)
@@ -52,7 +52,7 @@ class MetrocScrapingOtroSpider(Spider):
 		
 		except FileNotFoundError:
 			os.mkdir(os.getcwd() + '\\logs')	
-			LOG_FILENAME = '.\\logs\\projects_log_' + str(date.today()) + '.log'
+			LOG_FILENAME = '.\\logs\\otros_log_' + str(date.today()) + '.log'
 
 			for handler in logging.root.handlers[:]:
 				logging.root.removeHandler(handler)

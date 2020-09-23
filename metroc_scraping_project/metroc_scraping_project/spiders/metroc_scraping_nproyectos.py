@@ -399,7 +399,7 @@ class MetrocScrapingNproyectosSpider(Spider):
 		caracteristicas = str(caracteristicas)
 
 		self.print_('#'*90)
-		self.print('\n','ESTAMOS CON NUEVOS PROYECTOS EN', data_link['neg_'].upper(), 'UBICADO EN', data_link['loc_'].upper(), '\n')
+		self.print_('\n'+'ESTAMOS CON NUEVOS PROYECTOS EN ' + data_link['neg_'].upper() + ' UBICADO EN ' + data_link['loc_'].upper()+ '\n')
 		self.print_(
 			f'''
 			  Constructora:  {constructor}
