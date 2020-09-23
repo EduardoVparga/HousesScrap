@@ -248,7 +248,7 @@ class MetrocScrapingNproyectosSpider(Spider):
 
 				mun_name = project['mciudad']['nombre']
 
-				cel_num = apto['contactPhone']
+				cel_num = project['contactPhone']
 
 				constructor = project['mnombreconstructor']
 				proyecto = project['mnombreproyecto']

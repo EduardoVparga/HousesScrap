@@ -292,7 +292,7 @@ class MetrocScrapingOtroSpider(Spider):
 
 				mun_name = otro['mciudad']['nombre']
 
-				cel_num = apto['contactPhone']
+				cel_num = otro['contactPhone']
 
 				constructor = otro['mnombreconstructor']
 				proyecto = otro['mnombreproyecto']

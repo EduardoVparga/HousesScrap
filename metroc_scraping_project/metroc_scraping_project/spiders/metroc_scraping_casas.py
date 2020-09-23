@@ -281,7 +281,7 @@ class MetrocScrapingCasasSpider(Spider):
 
 				mun_name = casa['mciudad']['nombre']
 
-				cel_num = apto['contactPhone']
+				cel_num = casa['contactPhone']
 
 				constructor = casa['mnombreconstructor']
 				proyecto = casa['mnombreproyecto']
