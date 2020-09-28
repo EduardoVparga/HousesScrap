@@ -8,11 +8,30 @@ from requests import get
 from json import loads
 
 
-from time import sleep
-
-
 import os, logging
 from datetime import date
+
+from time import sleep
+from socket import gethostbyname, create_connection, error
+
+
+
+def check_connection():
+	while True:
+		try:
+			gethostbyname('google.com')
+			connection = create_connection(('google.com', 80), 1)
+			connection.close()
+			print('Hay conexion a internet, continuamos !!')
+			break
+		
+		except error:
+			print('No hay conexion a internet, esperaremos por 2 minutos')
+			sleep(120)
+			continue
+
+
+check_connection()
 
 
 N_category = 0
@@ -81,6 +100,7 @@ class FincaraizScrapingNprojectsSpider(Spider):
 		driver = webdriver.Firefox()
 		sleep(3)
 
+		check_connection()
 		driver.get(category)
 		sleep(3)
 
@@ -116,7 +136,7 @@ class FincaraizScrapingNprojectsSpider(Spider):
 		trys = 0
 		trys_per_cache = 0
 
-
+		check_connection()
 		yield Request(url= url_parts['1ra_parte']+ 
 						   url_parts['key_sub1']+
 						   str(url_parts['key_pag'])+
@@ -231,7 +251,7 @@ class FincaraizScrapingNprojectsSpider(Spider):
 
 		cache_url = response.url
 
-
+		check_connection()
 		yield Request(url= category,
 					  callback= self.second_parse,
 					  meta= {'url_parts': url_parts,
@@ -355,6 +375,7 @@ class FincaraizScrapingNprojectsSpider(Spider):
 
 			ini_url_pag = pag_results[n_project]['inmu_url']
 
+			check_connection()
 			yield Request(url= ini_url_pag,
 						  callback= self.main_parse,
 						  meta= {'url_parts': url_parts,
@@ -393,6 +414,7 @@ class FincaraizScrapingNprojectsSpider(Spider):
 
 			url_parts['key_pag'] = url_parts['key_pag'] + 1
 
+			check_connection()
 			yield Request(url= url_parts['1ra_parte']+ 
 							   url_parts['key_sub1']+
 							   str(url_parts['key_pag'])+
@@ -534,6 +556,7 @@ class FincaraizScrapingNprojectsSpider(Spider):
 
 			id_details = id_details.strip()
 
+			check_connection()
 			views = get('https://www.fincaraiz.com.co/WebServices/Statistics.asmx/GetAdvertVisits?idAdvert='+id_details+'&idASource=40&idType=1001')
 
 			views_sel = Selector(text= views.text)
@@ -576,6 +599,7 @@ class FincaraizScrapingNprojectsSpider(Spider):
 
 			next_url_pag = pag_results[n_project]['inmu_url']
 
+			check_connection()
 			yield Request(url= next_url_pag,
 						  callback= self.main_parse,
 						  meta= {'url_parts': url_parts,
@@ -589,6 +613,7 @@ class FincaraizScrapingNprojectsSpider(Spider):
 						  dont_filter= True)
 
 		else:
+			check_connection()
 			yield Request(url= cache_url,
 						  callback= self.first_parse,
 						  meta= {'url_parts': url_parts,

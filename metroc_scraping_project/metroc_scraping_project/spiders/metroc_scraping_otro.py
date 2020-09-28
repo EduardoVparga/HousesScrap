@@ -9,6 +9,25 @@ import os, logging
 
 from datetime import date
 
+from socket import gethostbyname, create_connection, error
+
+
+def check_connection():
+	while True:
+		try:
+			gethostbyname('google.com')
+			connection = create_connection(('google.com', 80), 1)
+			connection.close()
+			print('Hay conexion a internet, continuamos !!')
+			break
+		
+		except error:
+			print('No hay conexion a internet, esperaremos por 2 minutos')
+			sleep(120)
+			continue
+
+
+check_connection()
 
 N_categoria = -1 # Como son varias categorias construidas bajo la misma clase, se optó por acceder a cada una de ellas de manera separada para hacer más simple el codigo (hasta el dia 28/08/2020 son 4 categorias)
 
@@ -94,6 +113,7 @@ class MetrocScrapingOtroSpider(Spider):
 
 		n_cat = 0 ################################################################################# ojo !!
 
+		check_connection()
 		yield Request(url= response.url,
 					  callback= self.first_parse,
 					  meta= {'data_links': data_links,
@@ -120,6 +140,8 @@ class MetrocScrapingOtroSpider(Spider):
 
 		n = 0
 		trys = 0
+
+		check_connection()
 		yield Request(
 					  headers= {'Accept': 'application/json, text/plain, */*',
 								'Accept-Encoding': 'gzip, deflate, br',
@@ -173,6 +195,7 @@ class MetrocScrapingOtroSpider(Spider):
 		api_link = 'https://www.metrocuadrado.com/rest-search/search?realEstateTypeList='+inmu_+'&realEstateBusinessList='+type_+'&from='  
 		
 
+		check_connection()
 		yield Request(
 					  headers= {'Accept': 'application/json, text/plain, */*',
 								'Accept-Encoding': 'gzip, deflate, br',
@@ -256,6 +279,8 @@ class MetrocScrapingOtroSpider(Spider):
 
 
 			trys +=1
+
+			check_connection()
 			yield Request(url= cat_link,
 						  callback= self.partial_parse,
 						  meta= {'data_links': data_links,
@@ -351,6 +376,7 @@ class MetrocScrapingOtroSpider(Spider):
 
 			print(data_otros[n_otro])
 
+			check_connection()
 			yield Request(url= url_otro,
 						  callback= self.details_parse,
 						  meta= {'data_links': data_links,
@@ -382,6 +408,8 @@ class MetrocScrapingOtroSpider(Spider):
 
 		elif n_cat < len(otros_links)- 1:
 			n_cat += 1
+
+			check_connection()
 			yield Request(url= 'https://www.metrocuadrado.com/',
 						  callback= self.first_parse,
 						  meta= {'data_links': data_links,
@@ -498,6 +526,7 @@ class MetrocScrapingOtroSpider(Spider):
 			n_otro += 1
 			url_otro = data_otros[n_otro]['url']
 
+			check_connection()
 			yield Request(url= url_otro,
 						  callback= self.details_parse,
 						  meta= {'data_links': data_links,
@@ -526,6 +555,8 @@ class MetrocScrapingOtroSpider(Spider):
 								'X-Requested-With': 'XMLHttpRequest'})
 
 		else:
+
+			check_connection()
 			yield Request(url= cat_link,
 						  callback= self.partial_parse,
 						  meta= {'data_links': data_links,
