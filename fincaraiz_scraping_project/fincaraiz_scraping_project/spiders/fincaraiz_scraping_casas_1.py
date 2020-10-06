@@ -27,7 +27,7 @@ def check_connection():
 		
 		except error:
 			print('No hay conexion a internet, esperaremos por 2 minutos')
-			sleep(120)
+			sleep(3)
 			continue
 
 
@@ -85,9 +85,10 @@ class FincaraizScrapingCasas1Spider(Spider):
 
 		categories = response.xpath('//*[@id= "main_menu"]/ul/li/a/@href').extract()
 
-		categories = ['https://www.fincaraiz.com.co'+link for link in categories if '#' not in link and 'https' not in link]
+		categories = [link for link in categories if '#' not in link and 'https' not in link]
 
 		print()
+
 
 		for n in categories:
 			print(n)
@@ -96,20 +97,78 @@ class FincaraizScrapingCasas1Spider(Spider):
 
 		category = categories[N_category]
 
-		driver = webdriver.Firefox()
-		sleep(3)
+		sub_categories = response.xpath('//*[@id= "main_menu"]/ul/li/a[contains(@href, "'+category+'")]').xpath('..//ul/li/a/@href').extract()
+		sub_categories = ['https://www.fincaraiz.com.co'+link for link in sub_categories if '#' not in link and 'https' not in link]
+
+		# for x in sub_categories:
+		# 	print(x)
+
+		current_sub_categories = sub_categories[:4] ################################################ sub categories
+		
+		for i in current_sub_categories:
+			print(i)
+
+		#sleep(120) ######################## OJO !!
+
+		n_sub_cat = 0
 
 		check_connection()
-		driver.get(category)
-		sleep(3)
+		yield Request(url= response.url,
+					  callback= self.initial_parse,
+					  meta= {'current_sub_categories': current_sub_categories,
+							 'n_sub_cat': n_sub_cat},
+					  dont_filter= True)
 
 
-		for request in driver.requests:
-			if 'Find?semantic' in str(request.url) and 'text/xml' in request.response.headers['Content-Type']:
-				print(request)
-				api = str(request)
+	def initial_parse(self, response):
+		current_sub_categories = response.meta['current_sub_categories']
+		n_sub_cat = response.meta['n_sub_cat']
 
-		driver.quit()
+		sub_category = current_sub_categories[n_sub_cat]
+
+		try:
+			driver = webdriver.Firefox()
+			print_('Se logro abrir el explorador')
+			sleep(3)
+
+			check_connection()
+			print_('Antes de el get de seleniumwire')
+			driver.get(sub_category)
+			print_('Despues de el get de seleniumwire')
+			sleep(3)
+
+			for request in driver.requests:
+				if 'Find?semantic' in str(request.url) and 'text/xml' in request.response.headers['Content-Type']:
+					print(request)
+					api = str(request)
+
+			driver.quit()
+
+		except:
+			try: driver.quit()
+			except: pass
+
+			sleep(10)
+
+			driver = webdriver.Firefox()
+			print_('Se logro abrir el explorador')
+			sleep(3)
+
+			check_connection()
+			print_('Antes de el get de seleniumwire')
+			driver.get(sub_category)
+			print_('Despues de el get de seleniumwire')
+			sleep(3)
+
+			for request in driver.requests:
+				if 'Find?semantic' in str(request.url) and 'text/xml' in request.response.headers['Content-Type']:
+					print(request)
+					api = str(request)
+
+			driver.quit()
+
+
+
 
 		try:
 			key = api.split('=ad=', 1)[1].split('&', 1)[0]
@@ -121,6 +180,7 @@ class FincaraizScrapingCasas1Spider(Spider):
 			sub_part_3 = '|' + key.split('|', 2)[-1]
 
 		except:
+			print_(api)
 			print_('OJO HUBO UN ERROR EN LA CLAVE PARA EL API, REVISAR !!')
 
 		url_parts = {
@@ -148,41 +208,85 @@ class FincaraizScrapingCasas1Spider(Spider):
 						   url_parts['3ra_parte'],
 					  callback= self.first_parse,
 					  meta= {'url_parts': url_parts,
-							 'category': category,
+							 'sub_category': sub_category,
 							 'all_data_list': all_data_list,
 							 'trys': trys,
-							 'trys_per_cache': trys_per_cache},
+							 'trys_per_cache': trys_per_cache,
+							 'current_sub_categories': current_sub_categories,
+							 'n_sub_cat': n_sub_cat},
 					  headers= {'X-Requested-With':'XMLHttpRequest'})
 
-		# url_ = 'https://www.fincaraiz.com.co/WebServices/Property.asmx/Find?semantic=ad=30|2||||1|||||||||||||||||||||||0||||||||||&semanticReference=ad=30|2||||1|||||||||||||||||||||||0||||||||||&dataTypeResponse=JSON&ControlLocations=LocationsBreadcrumbV2&filterHomeIsCalled=0'
-		# yield Request(url= url_,
-		# 			  callback= self.first_parse,
-		# 			  #meta= {'url_parts': url_parts},
-		# 			  meta= {'category':category},
-		# 			  headers= {'X-Requested-With':'XMLHttpRequest',
-		# 			  			'Accept': 'application/xml, text/xml, */*; q=0.01'})
 
 
+	def response_500_parse(self, response):
+		n_retry = response.meta['n_retry']
 
+		if n_retry['tag'] == 'first':
 
+			url_parts = response.meta['url_parts']
+			sub_category = response.meta['sub_category']
+			all_data_list = response.meta['all_data_list']
+			trys = response.meta['trys']
+			trys_per_cache = response.meta['trys_per_cache']
 
+			current_sub_categories = response.meta['current_sub_categories']
+			n_sub_cat = response.meta['n_sub_cat']
 
+			yield Request(url= response.url,
+						  callback= self.first_parse,
+						  meta= {'url_parts': url_parts,
+								 'sub_category': sub_category,
+								 'all_data_list': all_data_list,
+								 'trys': trys,
+								 'trys_per_cache': trys_per_cache,
+								 'current_sub_categories': current_sub_categories,
+								 'n_sub_cat': n_sub_cat,
+								 'n_retry': n_retry,
+								 'download_timeout': 100},
+						  headers= {'X-Requested-With':'XMLHttpRequest'},
+						  dont_filter= True)
 
+		elif n_retry['tag'] == 'main':
 
+			url_parts = response.meta['url_parts']
+			sub_category = response.meta['sub_category']
+			all_data_list = response.meta['all_data_list']
+			trys = response.meta['trys']
+			trys_per_cache = response.meta['trys_per_cache']
+			cache_url = response.meta['cache_url']
+			pag_results = response.meta['pag_results']
+			n_project = response.meta['n_project']
 
+			current_sub_categories = response.meta['current_sub_categories']
+			n_sub_cat = response.meta['n_sub_cat']	
 
-
-
-
+			yield Request(url= response.url,
+						  callback= self.main_parse,
+						  meta= {'url_parts': url_parts,
+								 'sub_category': sub_category,
+								 'all_data_list': all_data_list,
+								 'trys': trys,
+								 'trys_per_cache': trys_per_cache,
+								 'cache_url': cache_url,
+								 'pag_results': pag_results,
+								 'n_project': n_project,
+								 'current_sub_categories': current_sub_categories,
+								 'n_sub_cat': n_sub_cat,
+								 'n_retry': n_retry,
+								 'download_timeout': 100},
+						  dont_filter= True)
 
 
 
 	def first_parse(self, response):
 		url_parts = response.meta['url_parts']
-		category = response.meta['category']
+		sub_category = response.meta['sub_category']
 		all_data_list = response.meta['all_data_list']
 		trys = response.meta['trys']
 		trys_per_cache = response.meta['trys_per_cache']
+
+		current_sub_categories = response.meta['current_sub_categories']
+		n_sub_cat = response.meta['n_sub_cat']
 
 		print_()
 		print_('#'*40)
@@ -192,6 +296,91 @@ class FincaraizScrapingCasas1Spider(Spider):
 		print(type(response.body))
 		response_body = response.body.decode('utf-8')
 		print_()
+
+		if response.status == 500:
+			print_('antes de ver el n_retry')
+			try: n_retry = response.meta['n_retry']
+			except: n_retry = {'count': 1, 'tag': 'first'} 
+
+			print_('pasó de ver el n_retry, antes de entrar al if')
+			if n_retry['count'] < 10:
+
+				print_('entró al if, antes de dormir')
+				sleep(2**n_retry['count'])
+				print_('ya durmio, antes de aumentar el n_retry')
+				n_retry['count'] = n_retry['count'] + 1
+				print_('ya aumento el n_retry, auntes de asignar la url_500_response')
+
+				url_500_response = url_parts['1ra_parte']+ url_parts['key_sub1']+str(url_parts['key_pag'])+url_parts['key_sub3']+url_parts['2da_parte']+url_parts['key_sub1']+str(url_parts['key_pag'])+url_parts['key_sub3']+url_parts['3ra_parte']
+
+				print_('ya se asignó la url_500_response, antes del check_connection')				
+				check_connection()	
+
+				print_('ya ejecuto el check_connection, antes del request para volver a iniciar')
+				n = 0
+				try:
+					yield Request(url= url_500_response,
+								  callback= self.response_500_parse,
+								  meta= {'url_parts': url_parts,
+										 'sub_category': sub_category,
+										 'all_data_list': all_data_list,
+										 'trys': trys,
+										 'trys_per_cache': trys_per_cache,
+										 'current_sub_categories': current_sub_categories,
+										 'n_sub_cat': n_sub_cat,
+										 'n_retry': n_retry,
+										 'download_timeout': 5},
+								  headers= {'X-Requested-With':'XMLHttpRequest'},
+								  dont_filter= True)
+				except:
+					print_('Se levanto el error, se va a volver a intentar')
+					sleep(5)
+					yield Request(url= url_500_response,
+								  callback= self.response_500_parse,
+								  meta= {'url_parts': url_parts,
+										 'sub_category': sub_category,
+										 'all_data_list': all_data_list,
+										 'trys': trys,
+										 'trys_per_cache': trys_per_cache,
+										 'current_sub_categories': current_sub_categories,
+										 'n_sub_cat': n_sub_cat,
+										 'n_retry': n_retry,
+										 'download_timeout': 5},
+								  headers= {'X-Requested-With':'XMLHttpRequest'},
+								  dont_filter= True)
+				
+
+			else:
+
+				print_('entra al else, antes de reinicial el n_retry')
+				n_retry = {'count': 1, 'tag': 'first'}
+				
+				print_('reinicio el n_retry, antes de avanzar de pag')
+				
+				url_parts['key_pag'] = url_parts['key_pag'] + 1
+				
+				print_('ya se incrememto la pag, antes de asignar url_500_response')
+
+				url_500_response = url_parts['1ra_parte']+ url_parts['key_sub1']+str(url_parts['key_pag'])+url_parts['key_sub3']+url_parts['2da_parte']+url_parts['key_sub1']+str(url_parts['key_pag'])+url_parts['key_sub3']+url_parts['3ra_parte']
+
+				print_('ya se asignó la url_500_response, antes del check_connection')				
+				check_connection()	
+
+				print_('ya ejecuto el check_connection, antes del request para volver a iniciar')
+				yield Request(url= url_500_response,
+							  callback= self.response_500_parse,
+							  meta= {'url_parts': url_parts,
+									 'sub_category': sub_category,
+									 'all_data_list': all_data_list,
+									 'trys': trys,
+									 'trys_per_cache': trys_per_cache,
+									 'current_sub_categories': current_sub_categories,
+									 'n_sub_cat': n_sub_cat,
+									 'n_retry': n_retry},
+							  headers= {'X-Requested-With':'XMLHttpRequest'},
+							  dont_filter= True)
+				print_('deberia ser despues del request')
+
 
 		try:
 			raw_databody = str(response_body).split('<string xmlns="http://tempuri.org/">')[-1].split('[facets]')[0]
@@ -244,23 +433,23 @@ class FincaraizScrapingCasas1Spider(Spider):
 
 
 		raw_databody_proc= str.encode(raw_databody_proc)
-		#print_('De aqui pa abajo si hay json')
-		#print_(loads(raw_databody_proc))
 
 		data_json = loads(raw_databody_proc)
 
 		cache_url = response.url
 
 		check_connection()
-		yield Request(url= category,
+		yield Request(url= sub_category,
 					  callback= self.second_parse,
 					  meta= {'url_parts': url_parts,
-							 'category': category,
+							 'sub_category': sub_category,
 							 'all_data_list': all_data_list,
 							 'trys': trys,
 							 'trys_per_cache': trys_per_cache,
 							 'data_json': data_json,
-							 'cache_url': cache_url},
+							 'cache_url': cache_url,
+							 'current_sub_categories': current_sub_categories,
+							 'n_sub_cat': n_sub_cat},
 					  dont_filter= True)
 
 
@@ -269,13 +458,15 @@ class FincaraizScrapingCasas1Spider(Spider):
 	def second_parse(self, response):
 
 		url_parts = response.meta['url_parts']
-		category = response.meta['category']
+		sub_category = response.meta['sub_category']
 		all_data_list = response.meta['all_data_list']
 		trys = response.meta['trys']
 		trys_per_cache = response.meta['trys_per_cache']
 		data_json = response.meta['data_json']
 		cache_url = response.meta['cache_url']
 
+		current_sub_categories = response.meta['current_sub_categories']
+		n_sub_cat = response.meta['n_sub_cat']
 
 		print_('Second parse')
 		print_('#'*40)
@@ -379,32 +570,16 @@ class FincaraizScrapingCasas1Spider(Spider):
 			yield Request(url= ini_url_pag,
 						  callback= self.main_parse,
 						  meta= {'url_parts': url_parts,
-								 'category': category,
+								 'sub_category': sub_category,
 								 'all_data_list': all_data_list,
 								 'trys': trys,
 								 'trys_per_cache': trys_per_cache,
 								 'cache_url': cache_url,
 								 'pag_results': pag_results,
-								 'n_project': n_project},
+								 'n_project': n_project,
+								 'current_sub_categories': current_sub_categories,
+								 'n_sub_cat': n_sub_cat},
 						  dont_filter= True)
-
-
-		# elif test == 0 and trys_per_cache < 10:
-		# 		trys_per_cache += 1
-		# 		sleep(1)
-		# 		print_()
-		# 		print_(trys_per_cache)
-		# 		print_()
-
-		# 		yield Request(url= cache_url,
-		# 				  callback= self.first_parse,
-		# 				  meta= {'url_parts': url_parts,
-		# 						 'category': category,
-		# 						 'all_data_list': all_data_list,
-		# 						 'trys': trys,
-		# 						 'trys_per_cache': trys_per_cache},
-		# 				  headers= {'X-Requested-With':'XMLHttpRequest'},
-		# 				  dont_filter= True)
 
 
 
@@ -426,13 +601,24 @@ class FincaraizScrapingCasas1Spider(Spider):
 							   url_parts['3ra_parte'],
 						  callback= self.first_parse,
 						  meta= {'url_parts': url_parts,
-								 'category': category,
+								 'sub_category': sub_category,
 								 'all_data_list': all_data_list,
 								 'trys': trys,
-								 'trys_per_cache': trys_per_cache},
+								 'trys_per_cache': trys_per_cache,
+								 'current_sub_categories': current_sub_categories,
+								 'n_sub_cat': n_sub_cat},
 						  headers= {'X-Requested-With':'XMLHttpRequest'},
 						  dont_filter= True)
 
+		elif n_sub_cat < len(current_sub_categories)-1:
+			n_sub_cat += 1
+			global start_urls
+			check_connection()
+			yield Request(url= 'https://www.fincaraiz.com.co/',
+						  callback= self.initial_parse,
+						  meta= {'current_sub_categories': current_sub_categories,
+								 'n_sub_cat': n_sub_cat},
+						  dont_filter= True)
 
 		else:
 
@@ -445,7 +631,7 @@ class FincaraizScrapingCasas1Spider(Spider):
 	def main_parse(self, response):
 
 		url_parts = response.meta['url_parts']
-		category = response.meta['category']
+		sub_category = response.meta['sub_category']
 		all_data_list = response.meta['all_data_list']
 		trys = response.meta['trys']
 		trys_per_cache = response.meta['trys_per_cache']
@@ -453,7 +639,12 @@ class FincaraizScrapingCasas1Spider(Spider):
 		pag_results = response.meta['pag_results']
 		n_project = response.meta['n_project']
 
+		current_sub_categories = response.meta['current_sub_categories']
+		n_sub_cat = response.meta['n_sub_cat']		
+
 		# Siempre cuando entre aca hara llamado al cache !!  no lo olvide
+
+
 
 		inmu_id= pag_results[n_project]['inmu_id']
 		cliente_id= pag_results[n_project]['cliente_id']
@@ -482,6 +673,86 @@ class FincaraizScrapingCasas1Spider(Spider):
 		print_('#'*40)
 		print_(response.url)
 		print_()
+
+
+		if response.status == 500:
+			print_('intentando hacer una conexion a '+ inmu_url)
+			print_('antes de ver el n_retry')
+			try: n_retry = response.meta['n_retry']
+			except: n_retry = {'count': 1, 'tag': 'main'}
+			print_('pasó de ver el n_retry, antes de entrar al if')
+			if n_retry['count'] < 10:
+				print_('entró al if, antes de dormir')
+				sleep(2**n_retry['count'])
+				print_('ya durmio, antes de aumentar el n_retry')
+				n_retry['count'] = n_retry['count'] + 1
+				print_('se aumento el n_retry, antes de check_connection')
+				check_connection()
+				print_('se ejecuto check_connection, antes del request')
+
+				try:
+					yield Request(url= inmu_url,
+								  callback= self.response_500_parse,
+								  meta= {'url_parts': url_parts,
+										 'sub_category': sub_category,
+										 'all_data_list': all_data_list,
+										 'trys': trys,
+										 'trys_per_cache': trys_per_cache,
+										 'cache_url': cache_url,
+										 'pag_results': pag_results,
+										 'n_project': n_project,
+										 'current_sub_categories': current_sub_categories,
+										 'n_sub_cat': n_sub_cat,
+										 'n_retry': n_retry,
+										 'download_timeout': 5},
+								  dont_filter= True) 
+				except:
+					print_('Se levanto el error, se va a volver a intentar')
+					sleep(5)
+					yield Request(url= inmu_url,
+								  callback= self.response_500_parse,
+								  meta= {'url_parts': url_parts,
+										 'sub_category': sub_category,
+										 'all_data_list': all_data_list,
+										 'trys': trys,
+										 'trys_per_cache': trys_per_cache,
+										 'cache_url': cache_url,
+										 'pag_results': pag_results,
+										 'n_project': n_project,
+										 'current_sub_categories': current_sub_categories,
+										 'n_sub_cat': n_sub_cat,
+										 'n_retry': n_retry,
+										 'download_timeout': 5},
+								  dont_filter= True)
+
+			else:
+				print_('entra al else n_retry = '+str(n_retry))
+				n_retry = {'count': 1, 'tag': 'main'}
+
+				n_project +=1
+
+				next_url_pag = pag_results[n_project]['inmu_url']
+				print_('despues de reiniciar el n_retry, aumetar el n_project y obtener la siguiente url, se va a check_connection')
+				check_connection()
+				print_('se ejecuto check_connection, antes del request')	
+				yield Request(url= next_url_pag,
+							  callback= self.main_parse,
+							  meta= {'url_parts': url_parts,
+									 'sub_category': sub_category,
+									 'all_data_list': all_data_list,
+									 'trys': trys,
+									 'trys_per_cache': trys_per_cache,
+									 'cache_url': cache_url,
+									 'pag_results': pag_results,
+									 'n_project': n_project,
+									 'current_sub_categories': current_sub_categories,
+									 'n_sub_cat': n_sub_cat,
+									 'n_retry': n_retry},
+							  dont_filter= True)
+				print_('despues del request en el else')
+
+
+
 
 		#print(response.body)
 
@@ -535,10 +806,6 @@ class FincaraizScrapingCasas1Spider(Spider):
 		if estrato != None:
 			estrato = estrato.strip()
 
-
-
-
-
 		
 
 		antiguedad = response.xpath('//*[@class= "row features_2 "]/ul//*[contains(text(), "Antigüedad:")]').xpath('../text()').extract_first()
@@ -561,12 +828,6 @@ class FincaraizScrapingCasas1Spider(Spider):
 
 
 
-
-
-
-
-
-
 		caracteristicas = response.xpath('//*[@class = "features_3"]/ul[@class= "InitialUL"]/li/text()').extract()
 
 		if caracteristicas != []:
@@ -582,16 +843,20 @@ class FincaraizScrapingCasas1Spider(Spider):
 
 		id_details = response.xpath('//h2[@class= "description"]/span/b/text()').extract_first()
 
-		if id_details != None:
+		while True:
+			try:
+				if id_details != None:
 
-			id_details = id_details.strip()
+					id_details = id_details.strip()
 
-			check_connection()
-			views = get('https://www.fincaraiz.com.co/WebServices/Statistics.asmx/GetAdvertVisits?idAdvert='+id_details+'&idASource=40&idType=1001')
+					check_connection()
+					views = get('https://www.fincaraiz.com.co/WebServices/Statistics.asmx/GetAdvertVisits?idAdvert='+id_details+'&idASource=40&idType=1001')
 
-			views_sel = Selector(text= views.text)
-			views = views_sel.xpath('//double/text()').extract_first()
-
+					views_sel = Selector(text= views.text)
+					views = views_sel.xpath('//double/text()').extract_first()
+					break
+			except:
+				continue
 
 
 		yield {
@@ -636,13 +901,15 @@ class FincaraizScrapingCasas1Spider(Spider):
 			yield Request(url= next_url_pag,
 						  callback= self.main_parse,
 						  meta= {'url_parts': url_parts,
-								 'category': category,
+								 'sub_category': sub_category,
 								 'all_data_list': all_data_list,
 								 'trys': trys,
 								 'trys_per_cache': trys_per_cache,
 								 'cache_url': cache_url,
 								 'pag_results': pag_results,
-								 'n_project': n_project},
+								 'n_project': n_project,
+								 'current_sub_categories': current_sub_categories,
+								 'n_sub_cat': n_sub_cat},
 						  dont_filter= True)
 
 		else:
@@ -650,9 +917,11 @@ class FincaraizScrapingCasas1Spider(Spider):
 			yield Request(url= cache_url,
 						  callback= self.first_parse,
 						  meta= {'url_parts': url_parts,
-								 'category': category,
+								 'sub_category': sub_category,
 								 'all_data_list': all_data_list,
 								 'trys': trys,
-								 'trys_per_cache': trys_per_cache},
+								 'trys_per_cache': trys_per_cache,
+								 'current_sub_categories': current_sub_categories,
+								 'n_sub_cat': n_sub_cat},
 						  headers= {'X-Requested-With':'XMLHttpRequest'},
 						  dont_filter= True)

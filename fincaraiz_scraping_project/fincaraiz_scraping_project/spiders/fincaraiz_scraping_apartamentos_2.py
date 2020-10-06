@@ -53,17 +53,15 @@ def print_(message = ' ', type_ = 'info'):
 		print('Mire que es corto lo que hay que escribir pa que se equivoque!!')
 
 
-class FincaraizScrapingApartamentos1Spider(Spider):
-	name = 'fincaraiz_scraping_apartamentos_1'
+class FincaraizScrapingApartamentos2Spider(Spider):
+	name = 'fincaraiz_scraping_apartamentos_2'
 	allowed_domains = ['fincaraiz.com.co']
-
-	#global start_urls
 	start_urls = ['https://www.fincaraiz.com.co/']
 
 	def parse(self, response):
 
 		try:
-			LOG_FILENAME = '.\\logs\\aptos_1_log_' + str(date.today()) + '.log'
+			LOG_FILENAME = '.\\logs\\aptos_2_log_' + str(date.today()) + '.log'
 
 			for handler in logging.root.handlers[:]:
 				logging.root.removeHandler(handler)
@@ -73,7 +71,7 @@ class FincaraizScrapingApartamentos1Spider(Spider):
 		
 		except FileNotFoundError:
 			os.mkdir(os.getcwd() + '\\logs')
-			LOG_FILENAME = '.\\logs\\aptos_1_log_' + str(date.today()) + '.log'
+			LOG_FILENAME = '.\\logs\\aptos_2_log_' + str(date.today()) + '.log'
 
 			for handler in logging.root.handlers[:]:
 				logging.root.removeHandler(handler)
@@ -104,7 +102,7 @@ class FincaraizScrapingApartamentos1Spider(Spider):
 		# for x in sub_categories:
 		# 	print(x)
 
-		current_sub_categories = sub_categories[:4] ################################################ sub categories
+		current_sub_categories = sub_categories[4:8] ################################################ sub categories
 		
 		for i in current_sub_categories:
 			print(i)
@@ -216,7 +214,6 @@ class FincaraizScrapingApartamentos1Spider(Spider):
 							 'current_sub_categories': current_sub_categories,
 							 'n_sub_cat': n_sub_cat},
 					  headers= {'X-Requested-With':'XMLHttpRequest'})
-
 
 
 
@@ -926,4 +923,4 @@ class FincaraizScrapingApartamentos1Spider(Spider):
 								 'current_sub_categories': current_sub_categories,
 								 'n_sub_cat': n_sub_cat},
 						  headers= {'X-Requested-With':'XMLHttpRequest'},
-						  dont_filter= True)	
+						  dont_filter= True)

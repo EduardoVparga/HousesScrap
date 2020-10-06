@@ -12,6 +12,8 @@ BOT_NAME = 'fincaraiz_scraping_project'
 SPIDER_MODULES = ['fincaraiz_scraping_project.spiders']
 NEWSPIDER_MODULE = 'fincaraiz_scraping_project.spiders'
 
+RETRY_HTTP_CODES = [502, 503, 504, 400, 408, 500]
+HTTPERROR_ALLOWED_CODES = [500]
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0'
