@@ -297,6 +297,9 @@ class FincaraizScrapingApartamentos3Spider(Spider):
 		print_()
 
 		if response.status == 500:
+			print_('Antes de dormir')
+			sleep(120)
+			print_('Despues de dormir')
 			print_('antes de ver el n_retry')
 			try: n_retry = response.meta['n_retry']
 			except: n_retry = {'count': 1, 'tag': 'first'} 
@@ -675,6 +678,9 @@ class FincaraizScrapingApartamentos3Spider(Spider):
 
 
 		if response.status == 500:
+			print_('Antes de dormir')
+			sleep(120)
+			print_('Despues de dormir')
 			print_('intentando hacer una conexion a '+ inmu_url)
 			print_('antes de ver el n_retry')
 			try: n_retry = response.meta['n_retry']
